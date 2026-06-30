@@ -213,7 +213,9 @@ export const WORKFLOW_STAGES = [
       { header: 'Lot No', key: 'lotNo' },
       { header: 'Work Order No', key: 'woNo' },
       { header: 'Lifter', key: 'lifter' },
-      { header: 'Target Speed', key: 'liftingSpeed' }
+      { header: 'Total Quantity (MT)', key: 'quantity' },
+      { header: 'Lift Quantity (MT)', key: 'liftQty' },
+      { header: 'Pending Quantity (MT)', key: 'pendingQty' }
     ],
     fields: [
       { key: 'woNo', label: 'Work Order Number', cumulative: true },
@@ -230,11 +232,13 @@ export const WORKFLOW_STAGES = [
     title: 'Dispatch',
     columns: [
       { header: 'Lot No', key: 'lotNo' },
+      { header: 'Customer Name', key: 'firm' },
       { header: 'Transporter', key: 'transporter' },
       { header: 'Truck Count', key: 'trucks' },
       { header: 'Dispatched Qty', key: 'dispatchQty' }
     ],
     fields: [
+      { key: 'firm', label: 'Customer Name', cumulative: true },
       { key: 'dispatchId', label: 'Dispatch ID', type: 'text', required: true },
       { key: 'truckNo', label: 'Truck Number', type: 'text', required: true },
       { key: 'driverName', label: 'Driver Name', type: 'text', required: true },
@@ -427,6 +431,8 @@ export const INITIAL_LOT_DATA = [
     source: 'SECL',
     grade: 'G10',
     quantity: 10000,
+    liftQty: 6750,
+    pendingQty: 3250,
     bidRate: 4200,
     emdAmount: 2500000,
     bank: 'SBI',
@@ -447,9 +453,22 @@ export const INITIAL_LOT_DATA = [
     handlingRate: 65,
     woNo: 'WO-ASAK-01',
     liftingSpeed: '1200 MT/day',
+    truckNo: 'MH-12-AB-4521',
+    driverName: 'Ramesh Yadav',
+    driverMobile: '+91 98201 34567',
     transporter: 'Shree Transport',
     trucks: 185,
     dispatchQty: 6750,
+    dispatchId: 'DSP-2026-001',
+    loadingDate: '2026-06-30',
+    loadingTime: '14:30',
+    mineWeight: 35.5,
+    royaltyNo: 'RY-9921',
+    destinationParty: 'XYZ Sponge Pvt Ltd',
+    destination: 'Raipur Plant',
+    freightRate: 850,
+    advancePaid: 15000,
+    remarks: 'Ready for dispatch',
     customer: 'XYZ Sponge Pvt Ltd',
     salesPrice: 4800,
     allocatedQty: 6750,
@@ -501,6 +520,8 @@ export const INITIAL_LOT_DATA = [
     source: 'SECL',
     grade: 'G10',
     quantity: 3000,
+    liftQty: 1800,
+    pendingQty: 1200,
     bidRate: 4200,
     emdAmount: 750000,
     bank: 'HDFC',
@@ -517,13 +538,26 @@ export const INITIAL_LOT_DATA = [
     receiptStatus: 'Pending Office Approval',
     doNo: 'DO-SECL-002',
     doExpiry: '2026-05-15',
-    lifter: 'XYZ handling',
+    lifter: 'ABC Lifter',
     handlingRate: 70,
     woNo: 'WO-ASAK-02',
     liftingSpeed: '1000 MT/day',
+    truckNo: 'GJ-05-CD-7733',
+    driverName: 'Suresh Patel',
+    driverMobile: '+91 97654 88901',
     transporter: 'Ravi Roadlines',
     trucks: 50,
     dispatchQty: 1800,
+    dispatchId: 'DSP-2026-002',
+    loadingDate: '2026-06-30',
+    loadingTime: '09:15',
+    mineWeight: 42.0,
+    royaltyNo: 'RY-8812',
+    destinationParty: 'Jai Bharat Steel',
+    destination: 'Bhilai',
+    freightRate: 920,
+    advancePaid: 20000,
+    remarks: 'Priority dispatch',
     customer: 'Jai Bharat Steel',
     salesPrice: 4750,
     allocatedQty: 1800,
@@ -574,6 +608,8 @@ export const INITIAL_LOT_DATA = [
     source: 'MSTC',
     grade: 'G11',
     quantity: 5000,
+    liftQty: 0,
+    pendingQty: 5000,
     bidRate: 4100,
     emdAmount: 1250000,
     bank: 'SBI',
@@ -594,9 +630,22 @@ export const INITIAL_LOT_DATA = [
     handlingRate: 0,
     woNo: '',
     liftingSpeed: '',
+    truckNo: 'CG-04-EF-1102',
+    driverName: 'Mahesh Kumar',
+    driverMobile: '+91 94301 22456',
     transporter: '',
     trucks: 0,
     dispatchQty: 0,
+    dispatchId: 'DSP-2026-003',
+    loadingDate: '2026-07-01',
+    loadingTime: '11:00',
+    mineWeight: 38.5,
+    royaltyNo: 'RY-7734',
+    destinationParty: 'Kalyani Industries',
+    destination: 'Bilaspur',
+    freightRate: 780,
+    advancePaid: 12000,
+    remarks: 'Pending clearance',
     customer: '',
     salesPrice: 0,
     allocatedQty: 0,
@@ -640,17 +689,41 @@ export const INITIAL_LOT_DATA = [
 ];
 
 export const getWorkflowData = () => {
-  const data = localStorage.getItem('coal_workflow_lots');
+  const data = localStorage.getItem('coal_workflow_lots_v2');
   if (!data) {
-    localStorage.setItem('coal_workflow_lots', JSON.stringify(INITIAL_LOT_DATA));
+    localStorage.setItem('coal_workflow_lots_v2', JSON.stringify(INITIAL_LOT_DATA));
     return INITIAL_LOT_DATA;
   }
   return JSON.parse(data);
 };
 
 export const saveWorkflowData = (lots) => {
-  localStorage.setItem('coal_workflow_lots', JSON.stringify(lots));
+  localStorage.setItem('coal_workflow_lots_v2', JSON.stringify(lots));
 };
+
+// ─── Lift Record helpers (for Work Order history) ────────────────────────────
+
+/** Return all saved lift records, newest first */
+export const getLiftRecords = () => {
+  const raw = localStorage.getItem('coal_lift_records');
+  return raw ? JSON.parse(raw) : [];
+};
+
+/** Generate next sequential lift number e.g. LIFT-2026-001 */
+export const generateLiftNumber = () => {
+  const records = getLiftRecords();
+  const year = new Date().getFullYear();
+  const seq = String(records.length + 1).padStart(3, '0');
+  return `LIFT-${year}-${seq}`;
+};
+
+/** Persist a new lift record */
+export const saveLiftRecord = (record) => {
+  const records = getLiftRecords();
+  records.unshift(record); // newest first
+  localStorage.setItem('coal_lift_records', JSON.stringify(records));
+};
+
 
 export const transitionLotStage = (lotId, currentStageId, formData = {}) => {
   const lots = getWorkflowData();

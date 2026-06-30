@@ -75,12 +75,7 @@ export default function WorkOrder() {
     );
   });
 
-    /* ── handlers ── */
-  const handleProcessClick = (lot) => {
-    setSelectedLot(lot);
-  };
-
-  const handleModalSubmit = ({ startDate, targetCompletionDate, terms, selectedLotIds, liftQtyMap }) => {
+  /* ── handlers ────�  const handleModalSubmit = ({ startDate, targetCompletionDate, terms, selectedLotIds, liftQtyMap }) => {
     setIsProcessing(true);
     setSelectedLot(null);
 
@@ -89,6 +84,7 @@ export default function WorkOrder() {
       const stageIdx = WORKFLOW_STAGES.findIndex(s => s.id === STAGE_ID);
       const nextStage = WORKFLOW_STAGES[stageIdx + 1];
 
+      // Build lift record lots array (ALL selected lots go into the record)
       const liftLots = [];
 
       const updated = allData.map(lot => {
@@ -98,6 +94,7 @@ export default function WorkOrder() {
         const newPendingQty = Math.max(0, (lot.quantity || 0) - newLiftQty);
         const isFullyLifted = newPendingQty === 0;
 
+        // Always record in lift history (even partial lifts)
         liftLots.push({
           lotId:      lot.id,
           lotNo:      lot.lotNo,
@@ -117,6 +114,7 @@ export default function WorkOrder() {
           pendingQty: newPendingQty,
         };
 
+        // ── Only move to History when FULLY lifted (pendingQty === 0) ──
         if (isFullyLifted) {
           newLot.stages = { ...newLot.stages, [STAGE_ID]: 'history' };
           if (nextStage) {
@@ -128,10 +126,18 @@ export default function WorkOrder() {
             }
           }
         }
+        // else: lot stays as 'pending' with updated liftQty / pendingQty
 
         return newLot;
       });
+floor(20 + Math.random() * 100);
+            newLot.dispatchQty = Math.floor((newLot.quantity || 0) * 0.6);
+          }
+        }
+        return newLot;
+      });
 
+      // Generate unique lift number and persist
       const liftNo = generateLiftNumber();
       saveLiftRecord({
         liftNo,
